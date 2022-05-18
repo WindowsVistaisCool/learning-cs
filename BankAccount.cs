@@ -2,8 +2,9 @@ namespace Classes;
 
 public class BankAccount
 {
+    private readonly decimal _minimumBalance;
     private static int accountNumberSeed = 1234567890;
-    public string Number { get;}
+    public string Number { get; }
     public string Owner { get; set; }
     public decimal Balance
     {
@@ -19,13 +20,17 @@ public class BankAccount
         }
     }
 
-    public BankAccount(string name, decimal initialBalance)
+    public BankAccount(string name, decimal initialBalance) : this(name, initialBalance, 0) {}
+
+    public BankAccount(string name, decimal initialBalance, decimal minimumBalance)
     {
         this.Number = accountNumberSeed.ToString();
         accountNumberSeed++;
 
         Owner = name;
-        MakeDeposit(initialBalance, DateTime.Now, "Initial balance");
+        _minimumBalance = minimumBalance;
+        if (initialBalance > 0)
+            MakeDeposit(initialBalance, DateTime.Now, "Initial balance");
     }
 
     public virtual void PerformMonthEndTransactions() { }
@@ -46,14 +51,22 @@ public class BankAccount
     {
         if (amount <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(amount), "Withdrawal amount must be positive.");
+            throw new ArgumentOutOfRangeException(nameof(amount), "Amount of withdrawal must be positive");
         }
-        if (Balance - amount < 0)
-        {
-            throw new InvalidOperationException("Not sufficient funds for this withdrawal.");
-        }
-        var withdrawal = new Transaction(-amount, date, note);
+        Transaction? overdraftTransaction = CheckWithdrawalLimit(Balance - amount < _minimumBalance);
+        Transaction? withdrawal = new(-amount, date, note);
         allTransactions.Add(withdrawal);
+        if (overdraftTransaction != null)
+            allTransactions.Add(overdraftTransaction);
+    }
+
+    protected virtual Transaction? CheckWithdrawalLimit(bool isOverDrawn)
+    {
+        if (isOverDrawn)
+        {
+            throw new InvalidOperationException("not enough funds");
+        }
+        else return default;
     }
 
     public string GetAccountHistory()
