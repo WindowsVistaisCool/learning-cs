@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/bin/Debug/net6.0/learn.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
+            "console": "internalConsole",
             "stopAtEntry": false
         },
         {
